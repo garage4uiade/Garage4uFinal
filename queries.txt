@@ -1,0 +1,191 @@
+
+--utilizador_existe
+CREATE OR REPLACE FUNCTION public.utilizador_existe(
+	utilizador_email_temp character varying,
+	pass character varying)
+    RETURNS character varying
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+AS $BODY$
+BEGIN
+  IF (select utilizador_name from utilizador where utilizador_email = utilizador_email_temp and utilizador_pass = pass) IS not NULL then
+  RETURN (select utilizador_id "return" from utilizador where utilizador_email = utilizador_email_temp and utilizador_pass = pass);
+  ELSE 
+  	IF (select utilizador_name from utilizador where utilizador_email = utilizador_email_temp) IS not NULL then
+  	RETURN (select 'existe mas a palavra pass esta errada '"return");
+  	ELSE 
+  	RETURN (select 'nao existe' "return");
+  	END IF;
+  END IF;
+END;
+$BODY$;
+
+
+
+--levantar
+CREATE OR REPLACE FUNCTION public.levantar(
+	utilizador_temp character varying,
+	num_card integer,
+	cvv_temp integer,
+	quantidade_dinheiro_temp integer)
+    RETURNS character varying
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+AS $BODY$
+BEGIN
+  IF (select id_cart from  banco_cartao inner join banco_conta on id_conta = conta_id where num_cartao=num_card and cvv=cvv_temp and nome_cartao=utilizador_temp and quantidade_dinheiro >= quantidade_dinheiro_temp::integer::numeric::money) IS not NULL then
+  UPDATE public.banco_conta
+    set quantidade_dinheiro=(select quantidade_dinheiro from banco_cartao inner join banco_conta on id_conta = conta_id where num_cartao=num_card and cvv=cvv_temp and nome_cartao=utilizador_temp)-quantidade_dinheiro_temp::integer::numeric::money
+    where conta_id=(select conta_id from banco_cartao inner join banco_conta on id_conta = conta_id where num_cartao=num_card and cvv=cvv_temp and nome_cartao=utilizador_temp) and 
+    id_utilizador=(select id_utilizador from banco_cartao inner join banco_conta on id_conta = conta_id where num_cartao=num_card and cvv=cvv_temp and nome_cartao=utilizador_temp) and
+    num_conta=(select num_conta from banco_cartao inner join banco_conta on id_conta = conta_id where num_cartao=num_card and cvv=cvv_temp and nome_cartao=utilizador_temp);
+
+  RETURN (select 'levantado');
+  ELSE 
+  RETURN (select 'nao tem ou nao existe');
+  END IF;
+END;
+$BODY$;
+
+--dispositivo_porta
+CREATE OR REPLACE FUNCTION public.dispositivo_porta(
+	utilizador_temp character varying,
+	pass character varying,
+	dispos character varying)
+    RETURNS character varying
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+AS $BODY$
+BEGIN
+  IF (select utilizador_id from reserva inner join res_gar on res_gar.reservas_id = reserva.reservas_id inner join dispositivo on res_gar.garagens_id = dispositivo.id_garagem inner join utilizador on utilizador.utilizador_id = reserva.id_utilizador where dispositivo.rkay = dispos and utilizador.utilizador_email = utilizador_temp and utilizador.utilizador_pass = pass) IS not NULL then
+		IF (select hora_de_entrda from reserva
+		 inner join res_gar on res_gar.reservas_id = reserva.reservas_id 
+		 inner join dispositivo on res_gar.garagens_id = dispositivo.id_garagem 
+		 inner join utilizador on utilizador.utilizador_id = reserva.id_utilizador 
+		 where hora_saida > now() and hora_de_entrda < now() and dispositivo.rkay = dispos 
+		 and utilizador.utilizador_email = utilizador_temp and utilizador.utilizador_pass = pass	
+		) IS not NULL then
+			if(select utilizador_id from reserva 
+				inner join res_gar on res_gar.reservas_id = reserva.reservas_id 
+				inner join dispositivo on res_gar.garagens_id = dispositivo.id_garagem 
+				inner join utilizador on utilizador.utilizador_id = reserva.id_utilizador
+				inner join garagens on res_gar.garagens_id = garagens.garagens_id 
+				where hora_saida > now() and hora_de_entrda < now() and dispositivo.rkay = dispos 
+		 		and utilizador.utilizador_email = utilizador_temp and utilizador.utilizador_pass = pass and dispositivo.estado_portao = '0') IS not NULL then
+					UPDATE dispositivo SET estado_portao = '1' WHERE rkay = dispos;
+				else
+					UPDATE dispositivo SET estado_portao = '0' WHERE rkay = dispos;
+				END IF;			
+			RETURN (SELECT 'alterado');
+		ELSE 
+			RETURN (SELECT 'terminou o tempo');
+  		END IF;
+  ELSE 
+      RETURN (select 'nao tem acesso');
+  END IF;  
+END;
+$BODY$;
+
+
+
+--dispositivo_lampada
+CREATE OR REPLACE FUNCTION public.dispositivo_lampada(
+	utilizador_temp character varying,
+	pass character varying,
+	dispos character varying)
+    RETURNS character varying
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+AS $BODY$
+BEGIN
+  IF (select utilizador_id from reserva inner join res_gar on res_gar.reservas_id = reserva.reservas_id inner join dispositivo on res_gar.garagens_id = dispositivo.id_garagem inner join utilizador on utilizador.utilizador_id = reserva.id_utilizador where dispositivo.rkay = dispos and utilizador.utilizador_email = utilizador_temp and utilizador.utilizador_pass = pass) IS not NULL then
+		IF (select hora_de_entrda from reserva
+		 inner join res_gar on res_gar.reservas_id = reserva.reservas_id 
+		 inner join dispositivo on res_gar.garagens_id = dispositivo.id_garagem 
+		 inner join utilizador on utilizador.utilizador_id = reserva.id_utilizador 
+		 where hora_saida > now() and hora_de_entrda < now() and dispositivo.rkay = dispos 
+		 and utilizador.utilizador_email = utilizador_temp and utilizador.utilizador_pass = pass	
+		) IS not NULL then
+			if(select utilizador_id from reserva 
+			inner join res_gar on res_gar.reservas_id = reserva.reservas_id 
+			inner join dispositivo on res_gar.garagens_id = dispositivo.id_garagem 
+			inner join utilizador on utilizador.utilizador_id = reserva.id_utilizador
+			inner join garagens on res_gar.garagens_id = garagens.garagens_id 
+			where dispositivo.rkay = dispos and utilizador.utilizador_email = utilizador_temp 
+			and utilizador.utilizador_pass = pass and garagens.lampada = '0') IS not NULL then
+				if(select utilizador_id from reserva 
+				inner join res_gar on res_gar.reservas_id = reserva.reservas_id 
+				inner join dispositivo on res_gar.garagens_id = dispositivo.id_garagem 
+				inner join utilizador on utilizador.utilizador_id = reserva.id_utilizador
+				inner join garagens on res_gar.garagens_id = garagens.garagens_id 
+				where dispositivo.rkay = dispos and utilizador.utilizador_email = utilizador_temp 
+				and utilizador.utilizador_pass = pass and dispositivo.estado_luz = '0') IS not NULL then
+					UPDATE dispositivo SET estado_portao = '1' WHERE rkay = dispos;
+				else
+					UPDATE dispositivo SET estado_portao = '0' WHERE rkay = dispos;
+				END IF;			
+				RETURN (SELECT 'alterado');
+			ELSE 
+			RETURN (SELECT 'nao tem lampada');
+  			END IF;				
+		ELSE 
+			RETURN (SELECT 'terminou o tempo');
+  		END IF;
+  ELSE 
+      RETURN (select 'nao tem acesso');
+  END IF;  
+END;
+$BODY$;
+
+
+--depositar
+CREATE OR REPLACE FUNCTION public.depositar(
+	utilizador_temp character varying,
+	num_card integer,
+	cvv_temp integer,
+	quantidade_dinheiro_temp integer)
+    RETURNS character varying
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+AS $BODY$
+BEGIN
+  IF (select id_cart from  banco_cartao inner join banco_conta on id_conta = conta_id where num_cartao=num_card and cvv=cvv_temp and nome_cartao=utilizador_temp) IS not NULL then
+  UPDATE public.banco_conta
+    SET quantidade_dinheiro=(select quantidade_dinheiro from  banco_cartao inner join banco_conta on id_conta = conta_id where num_cartao=num_card and cvv=cvv_temp and nome_cartao=utilizador_temp)+ quantidade_dinheiro_temp::integer::numeric::money
+    where conta_id=(select conta_id from banco_cartao inner join banco_conta on id_conta = conta_id where num_cartao=num_card and cvv=cvv_temp and nome_cartao=utilizador_temp) and 
+    id_utilizador=(select id_utilizador from banco_cartao inner join banco_conta on id_conta = conta_id where num_cartao=num_card and cvv=cvv_temp and nome_cartao=utilizador_temp) and
+    num_conta=(select num_conta from banco_cartao inner join banco_conta on id_conta = conta_id where num_cartao=num_card and cvv=cvv_temp and nome_cartao=utilizador_temp);
+
+  RETURN (select 'depositado');
+  ELSE 
+  RETURN (select 'erro nos dados');
+  END IF;
+END;
+$BODY$;
+
+
+
+--confirma_trasacao
+CREATE OR REPLACE FUNCTION public.confirma_trasacao(
+	utilizador_temp character varying,
+	num_card integer,
+	cvv_temp integer,
+	contidade_dinheiro_temp money)
+    RETURNS character varying
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+AS $BODY$
+BEGIN
+  IF (select id_cart from  banco_cartao inner join banco_conta on id_conta = conta_id where num_cartao=num_card and cvv=cvv_temp and nome_cartao=utilizador_temp and contidade_dinheiro >= contidade_dinheiro_temp) IS not NULL then
+  RETURN (select 'tem');
+  ELSE 
+  RETURN (select 'nao tem');
+  END IF;
+END;
+$BODY$;

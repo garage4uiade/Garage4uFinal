@@ -1,0 +1,230 @@
+create table utilizador(
+                    utilizador_id SERIAL not null,
+                    utilizador_name VARCHAR(60) not null,
+                    utilizador_morada VARCHAR(30),
+                    utilizador_gender CHAR(1) not null,
+                    utilizador_bdate date not null,
+                    utilizador_identificacao_id INT not null,
+                    utilizador_email VARCHAR(30) not null,
+                    utilizador_pass VARCHAR(30) not null,
+		    		quantidade_dinheiro money not null,
+					num_cartao integer,
+					cvv integer,
+					nome_cartao VARCHAR(30),					
+                    primary key (utilizador_id)
+);
+
+
+create table reserva(
+                    reservas_id SERIAL not null,
+                    id_utilizador INT not null,
+                    hora_de_entrda timestamp not null,
+                    hora_saida timestamp not null,
+                    primary key (reservas_id)
+);
+
+create table estado(
+                    id_estado SERIAL not null,
+                    estado VARCHAR(30),
+                    primary key (id_estado)
+);
+
+create table estado_reserva(
+                    estado_reserva_id SERIAL not null,
+                    id_reserva INT not null,
+                    id_estado INT not null,
+                    hora_de_entrda timestamp  not null,
+                     hora_saida timestamp ,
+                    primary key (estado_reserva_id)
+);
+
+create table zona(
+                    id_zona SERIAL not null,
+                    nome_zona VARCHAR(30) not null,
+                    cod_zona int not null,
+                    primary key (id_zona )
+);
+
+
+create table caracteristica(
+                    caracteristica_id SERIAL not null,
+                    tipo_caracteristica VARCHAR(30) not null,
+                    primary key (caracteristica_id)
+);
+
+
+create table garagens(
+                    garagens_id SERIAL not null,
+                    localizacao_rua VARCHAR(90) not null,	
+                    localizacao_geo VARCHAR(30) not null,
+                    id_propriatario INT not null,
+                    id_estado INT not null,
+                    id_zona INT not null,
+					lampada bool not null,
+                    primary key (garagens_id)
+);
+
+create table caracteristicas(
+                    caracteristicas_id SERIAL not null,
+                    caracteristica_id INT not null,
+                    garagens_id INT not null,
+                    primary key (caracteristicas_id)
+);
+
+create table res_gar(
+                    res_gar_id SERIAL not null,
+                    reservas_id INT not null,
+                    garagens_id INT not null,
+                    primary key (res_gar_id)
+);
+
+create table rate(
+                    rate_id SERIAL not null,
+                    id_res_gar INT not null,
+                    rate INT,
+                    primary key (rate_id)
+);
+
+
+
+create table dispositivo(
+					disp_id SERIAL not null,
+					id_garagem integer not null,
+					rkay VARCHAR(30) not null,
+					estado_portao bool not null,
+					estado_luz bool not null,
+					primary key (disp_id)
+);
+
+create table esqueceu_pass(
+					esq_id SERIAL not null,
+					utilizador_id integer not null,
+					rkay VARCHAR(30) not null,
+					primary key (esq_id)
+);
+
+
+
+alter table reserva
+add constraint reserva_fk_utilizador
+foreign key (id_utilizador) references utilizador(utilizador_id) 
+ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+
+
+alter table estado_reserva
+add constraint estado_reserva_fk_reserva
+foreign key (id_reserva) references reserva(reservas_id) 
+ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+alter table estado_reserva
+add constraint estado_reserva_fk_estado
+foreign key (id_estado) references estado(id_estado) 
+ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+
+alter table caracteristicas
+add constraint caracteristicas_fk_caracteristica
+foreign key (caracteristica_id) references caracteristica(caracteristica_id) 
+ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+alter table caracteristicas
+add constraint caracteristicas_fk_garagens
+foreign key (garagens_id) references garagens(garagens_id) 
+ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+alter table garagens
+add constraint garagens_fk_utilizador
+foreign key (id_propriatario) references utilizador(utilizador_id) 
+ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+alter table garagens
+add constraint garagens_fk_estado
+foreign key (id_estado) references estado(id_estado) 
+ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+alter table garagens
+add constraint garagens_fk_zona
+foreign key (id_zona) references zona(id_zona) 
+ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+
+
+alter table res_gar
+add constraint res_gar_fk_reserva
+foreign key (reservas_id) references reserva(reservas_id) 
+ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+alter table res_gar
+add constraint res_gar_fk_garagens
+foreign key (garagens_id) references garagens(garagens_id) 
+ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+
+
+alter table rate
+add constraint rate_fk_res_gar
+foreign key (id_res_gar) references res_gar(res_gar_id) 
+ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+
+
+alter table dispositivo
+add constraint dispositivo_fk_garagens
+foreign key (id_garagem) references garagens(garagens_id) 
+ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+
+
+alter table esqueceu_pass
+add constraint esqueceu_pass_fk_utilizador
+foreign key (utilizador_id) references utilizador(utilizador_id) 
+ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+
+
+
+
+
+
+
+
+create table banco_utilizador(
+					bancoUtilizador_id SERIAL not null,
+					nome_utilizador VARCHAR(30) not null,
+					primary key (bancoUtilizador_id)
+);
+
+
+create table banco_conta(
+					conta_id SERIAL not null,
+					id_utilizador integer not null,
+					num_conta integer not null,
+					quantidade_dinheiro money not null,
+					primary key (conta_id)
+);
+
+
+
+create table banco_cartao(
+					id_cart SERIAL not null,
+					id_conta integer not null,
+					num_cartao integer not null,
+					cvv integer not null,
+					nome_cartao VARCHAR(30) not null,
+					primary key (id_cart)
+);
+
+
+
+
+
+alter table banco_conta
+add constraint banco_conta_fk_banco_utilizador
+foreign key (id_utilizador) references banco_utilizador(bancoUtilizador_id) 
+ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+alter table banco_cartao
+add constraint banco_cartao_fk_banco_conta
+foreign key (id_conta) references banco_conta(conta_id) 
+ON DELETE NO ACTION ON UPDATE NO ACTION;
